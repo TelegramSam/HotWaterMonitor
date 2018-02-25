@@ -14,11 +14,20 @@
 
 #define SUFFICIENT_FLOW_LITERS 0.3
 #define SUFFICIENT_FLOW_MEASUREMENT_COUNT 24 // 4 minutes, 10 sec intervals
-#define WATTAGE 3300
-#define HEAT_EFFICIENCY 0.85 //85?
 #define SPECIFIC_HEAT_OF_WATER 4.186
 
 #define REPORTING_INTERVAL_SECONDS 10
+
+// start config
+#define WATTAGE 3300
+#define HEAT_EFFICIENCY 0.85 //85?
+
+char *ssid="--yourssid--";
+char *password="--yourpassword--";
+
+char* api_key="--yourapikey--";
+char* api_path="https://--yourhost--.execute-api.us-east-1.amazonaws.com/prod/HotWater_Update";
+// end config
 
 unsigned long reporting_interval_millis = REPORTING_INTERVAL_SECONDS * 1000;
 
@@ -32,8 +41,8 @@ OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
 
 // arrays to hold device addresses
-DeviceAddress output_thermometer_address = { 0x28, 0x7A, 0xC8, 0xA8, 0x07, 0x00, 0x00, 0x9A };
-DeviceAddress input_thermometer_address = { 0x28, 0x99, 0xC4, 0xA8, 0x07, 0x00, 0x00, 0xCB };
+DeviceAddress output_thermometer_address;
+DeviceAddress input_thermometer_address;
 
 HTTPClient http;
 
@@ -43,12 +52,6 @@ JsonObject& iot_bundle_state = iot_bundle.createNestedObject("state");
 JsonObject& iot_bundle_state_reported = iot_bundle_state.createNestedObject("reported");
 
 unsigned long last_report_millis = 0; 
-
-char *ssid="--wifissid--";
-char *password="--wifipassword--";
-
-char* api_key="--apikey--";
-char* api_path="https://--apigatewayhostname--.amazonaws.com/prod/HotWater_Update";
 
 unsigned int consecutive_sufficient_flow_measurements;
 float measured_input_c = 16.1;
@@ -82,6 +85,17 @@ void set_status_led(uint32_t c){
   pixels.show(); // This sends the updated pixel color to the hardware.
 }
 
+// function to print a device address
+void printAddress(DeviceAddress deviceAddress)
+{
+  for (uint8_t i = 0; i < 8; i++)
+  {
+    // zero pad the address if necessary
+    if (deviceAddress[i] < 16) Serial.print("0");
+    Serial.print(deviceAddress[i], HEX);
+  }
+}
+
 void setup() {
   Serial.begin(115200);
   delay(10);
@@ -92,10 +106,32 @@ void setup() {
 
   // Start up the library
   sensors.begin();
+  // autodetect addresses of sensors
+  if (!sensors.getAddress(input_thermometer_address, 0)) Serial.println("Unable to find address for Device 0"); 
+  if (!sensors.getAddress(output_thermometer_address, 1)) Serial.println("Unable to find address for Device 1"); 
 
   // set the resolution to 12 bit
   sensors.setResolution(input_thermometer_address, TEMPERATURE_PRECISION);
   sensors.setResolution(output_thermometer_address, TEMPERATURE_PRECISION);
+
+  //switch the sensors if we detected wrong
+  sensors.requestTemperatures();
+  float inputC = sensors.getTempC(input_thermometer_address);
+  float outputC = sensors.getTempC(output_thermometer_address);
+  if(inputC > outputC){
+    Serial.println("switching temp sensors");
+    // probably reversed. Switch addresses
+    if (!sensors.getAddress(input_thermometer_address, 1)) Serial.println("Unable to find address for Device 0"); 
+    if (!sensors.getAddress(output_thermometer_address, 0)) Serial.println("Unable to find address for Device 1"); 
+  }
+
+  Serial.print("Input Temp Address: ");
+  printAddress(input_thermometer_address);
+  Serial.println();
+  
+  Serial.print("Output Temp Address: ");
+  printAddress(output_thermometer_address);
+  Serial.println();
 
   // set up flow pulse counter
   flow_count = 0;
@@ -143,12 +179,14 @@ void report(){
     interval_flow_count = 0;
   }
 
-  Serial.println(liters_used);
+  
 
   sensors.requestTemperatures();
 
   float input_temp_c = sensors.getTempC(input_thermometer_address);
   float output_temp_c = sensors.getTempC(output_thermometer_address);
+
+  // Calculate replenishment effect since last interval.
 
   //track min and max water temps
   if(liters_used >= SUFFICIENT_FLOW_LITERS){
@@ -185,16 +223,15 @@ void report(){
     //how many liters can we heat in the elapsed seconds?
     float liters_heated = (liter_degrees_per_second / (measured_output_c - measured_input_c)) * elapsed_seconds;
     liter_deficit += min(liters_heated, liter_deficit * -1);
-
     
-     float liter_degree_delta = min(liter_degrees_per_second * elapsed_seconds, liter_degree_deficit * -1);
-     liter_degree_deficit += liter_degree_delta;
-     Serial.print("liter degrees per second: ");
-     Serial.println(liter_degrees_per_second);
-     Serial.print("elapsed seconds ");
-     Serial.println(elapsed_seconds);
-     Serial.print("liters replaced: ");
-     Serial.println(liter_deficit);
+    float liter_degree_delta = min(liter_degrees_per_second * elapsed_seconds, liter_degree_deficit * -1);
+    liter_degree_deficit += liter_degree_delta;
+    Serial.print("liter degrees per second: ");
+    Serial.println(liter_degrees_per_second);
+    Serial.print("elapsed seconds ");
+    Serial.println(elapsed_seconds);
+    Serial.print("liters replaced: ");
+    Serial.println(liter_deficit);
   }
 
   // update bundle with data to report
@@ -204,13 +241,11 @@ void report(){
   iot_bundle_state_reported["liter_deficit"] = liter_deficit;
   iot_bundle_state_reported["measured_input_c"] = measured_input_c;
   iot_bundle_state_reported["measured_output_c"] = measured_output_c;
-  
 
   char shadow_string[300];
   iot_bundle.printTo((char*)shadow_string, iot_bundle.measureLength() + 1);
 
   // send data
-
   HTTPClient http;
   http.begin(api_path, "3013cd0ed90c2f942f13e85b9dc41d5630e200e0"); //second arg is the fingerprint of the aws api gateway cert.
   http.addHeader("Content-Type", "application/json");
