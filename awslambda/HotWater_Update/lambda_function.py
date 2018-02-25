@@ -1,3 +1,4 @@
+
 import boto3
 import json
 
@@ -17,8 +18,7 @@ def respond(err, res=None):
 
 
 def lambda_handler(event, context):
-    '''Hanldes the inbound update request
-    '''
+    '''Process newly sent temperature and flow data.'''
     print("Received event: " + json.dumps(event, indent=2))
 
     # log values to cloudwatch

@@ -1,0 +1,122 @@
+{
+  "languageModel": {
+    "types": [
+      {
+        "name": "DateChunk",
+        "values": [
+          {
+            "id": null,
+            "name": {
+              "value": "Today",
+              "synonyms": []
+            }
+          },
+          {
+            "id": null,
+            "name": {
+              "value": "Yesterday",
+              "synonyms": []
+            }
+          },
+          {
+            "id": null,
+            "name": {
+              "value": "This Week",
+              "synonyms": []
+            }
+          },
+          {
+            "id": null,
+            "name": {
+              "value": "Last Week",
+              "synonyms": []
+            }
+          },
+          {
+            "id": null,
+            "name": {
+              "value": "This Month",
+              "synonyms": []
+            }
+          },
+          {
+            "id": null,
+            "name": {
+              "value": "Last Month",
+              "synonyms": []
+            }
+          }
+        ]
+      }
+    ],
+    "intents": [
+      {
+        "name": "AMAZON.CancelIntent",
+        "samples": []
+      },
+      {
+        "name": "AMAZON.HelpIntent",
+        "samples": []
+      },
+      {
+        "name": "AMAZON.StopIntent",
+        "samples": []
+      },
+      {
+        "name": "LengthOfHeat",
+        "samples": [
+          "How long till water is reheated",
+          "how long till water full",
+          "how long till water hot",
+          "how long till water is hot"
+        ],
+        "slots": []
+      },
+      {
+        "name": "LengthOfShower",
+        "samples": [
+          "how long can I shower",
+          "how long of a shower can I take",
+          "how long I can shower",
+          "how long of a shower can I have"
+        ],
+        "slots": []
+      },
+      {
+        "name": "WaterRemaining",
+        "samples": [
+          "How much is left",
+          "how much hot water is left",
+          "how much remains",
+          "how much hot water remains",
+          "how much water is left"
+        ],
+        "slots": []
+      },
+      {
+        "name": "WaterVolumeUsed",
+        "samples": [
+          "How much water have I used in the last {timeframe}",
+          "How much water have we used in the last {timeframe}",
+          "How much water have we used",
+          "How much we've used in the last {timeframe}",
+          "How much we've used",
+          "How much we've used {period}",
+          "How much did we use {period}",
+          "How much did I use {period}"
+        ],
+        "slots": [
+          {
+            "name": "timeframe",
+            "type": "AMAZON.DURATION"
+          },
+          {
+            "name": "period",
+            "type": "DateChunk"
+          }
+        ]
+      }
+    ],
+    "invocationName": "hot water"
+  }
+}

@@ -1,0 +1,15 @@
+---
+swagger: "2.0"
+info:
+  version: "2018-01-24T05:09:17Z"
+  title: "HotWaterAPI"
+host: "tumocus4pl.execute-api.us-east-1.amazonaws.com"
+basePath: "/prod"
+schemes:
+- "https"
+paths:
+  /HotWater_Update:
+    post:
+      produces:
+      - "application/json"
+      responses: {}

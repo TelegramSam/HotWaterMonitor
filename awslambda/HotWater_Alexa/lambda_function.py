@@ -154,8 +154,6 @@ def water_remaining(intent, session):
     
     # calculate percentage heated
     percentage_remaining = (gallons_remaining / capacity_gallons) * 100
-    
-    #convert to gallons (todo: add preference.)
         
     if liter_deficit == 0:
         speech_output = "Your hot water is fully heated. "
@@ -244,8 +242,6 @@ def water_volume_used(intent, session):
     print("Liters: {0}".format(liters))
     
     gallons = liters * 0.264172
-    
-    #convert to gallons (todo: add preference.)
         
     if gallons == 0:
         speech_output = "You have used no hot water {0}. ".format(phrase) 
